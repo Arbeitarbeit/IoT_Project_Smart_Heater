@@ -52,3 +52,7 @@ function writeNewPost(data) {
 
   console.log("Current Temperature: " + data.temperature + "\nHour: " + now.getHours() + "\nMinute" + now.getMinutes());
 }
+
+//TODO: Implement function to detect when the temp/time values change and read them. Control heater based on temp/time vlaues
+
+dispAccel();
