@@ -21,3 +21,27 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const database = getDatabase(app);
+
+function dispAccel() {
+  var tic = new Date();
+  var data = IMU.getValueSync();
+  var toc = new Date();
+
+  var str2 = "";
+  if (data.temperature) {
+    var str2 = util.format(' %s %s', data.temperature.toFixed(4));  
+  }
+
+  writeNewPost(data);
+
+}
+
+function writeNewPost(data) {
+  const database = getDatabase(app);
+
+  update(ref(database), {
+      "temperature": data.temperature,
+  });
+
+  console.log("Current Temperature: " + data.temperature);
+}
