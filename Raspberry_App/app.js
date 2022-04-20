@@ -1,6 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
+
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -36,12 +37,18 @@ function dispAccel() {
 
 }
 
+
+
 function writeNewPost(data) {
   const database = getDatabase(app);
+  const now = new Date();
 
   update(ref(database), {
       "temperature": data.temperature,
+      "hour": now.getHours(),
+      "minute": now.getMinutes() 
+
   });
 
-  console.log("Current Temperature: " + data.temperature);
+  console.log("Current Temperature: " + data.temperature + "\nHour: " + now.getHours() + "\nMinute" + now.getMinutes());
 }
