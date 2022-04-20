@@ -11,6 +11,8 @@ console.log("Hello 🌎");
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
 import { getAnalytics } from "firebase/analytics";
+const { getDatabase, ref, onValue, set, update, push, child, get } = require('firebase/database');
+
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -32,14 +34,18 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const database = getDatabase(app);
 
-/* 
-Make the "Click me!" button move when the visitor clicks it:
-- First add the button to the page by following the "Next steps" in the README
-*/
+
 const btn_confirm = document.getElementById("button"); // Get the button from the page
 const time_input = document.getElementById("time_input");
 const temp_input = document.getElementById("temp_input");
 const notification = document.getElementById("notification");
+
+
+const notifRef = ref(database, 'notif');
+onValue(notifRef, (snapshot) => {
+  const notif = snapshot.val();
+  notification.innerHTML = notif;
+});
 
 
 // Detect clicks on the button
@@ -56,6 +62,21 @@ This is a comment that can span multiple lines
 - use comments to make your own notes!
 */
 
-btn_confirm.addEventListener("click", function(){
-   
-})
+
+btn_confirm.addEventListener("click", function(){    
+  var time_confirmed = time_input.value;
+  var temp_confirmed = temp_input.value;
+  var time_array = time_confirmed.split(':');
+  update(ref(database, 'time_Goal'), {
+    "hour": time_array[0],
+    "minute": time_array[1]
+  });
+  
+  update(ref(database), {
+    "temperature": temp_confirmed
+  });
+  
+  //test
+  temp_input.value = "222";
+  
+});
