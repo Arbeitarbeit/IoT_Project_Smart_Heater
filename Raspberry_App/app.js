@@ -61,6 +61,8 @@ const starCountRef = ref(database, 'update_temp');
         // if update_light is True
         if (temp_update){
 
+         
+
         // read in the rest of light data and process
             get(child(ref(database), `temperature`)).then((snapshot) => {
                 if (snapshot.exists()) {
@@ -68,20 +70,29 @@ const starCountRef = ref(database, 'update_temp');
                     const time_Goal = snapshot.val();
                     console.log("Desired Hour: " + time_Goal["hour"] + "\nDesired Minute: " + time_Goal["minute"]);
                     {
-                      if ((time_Goal["hour"] < now.getHours()) || (time_Goal["hour"] == now.getHours() && time_Goal["minute"] < now.getMinutes()))
+                      if ((time_Goal["hour"] < now.getHours()) || (time_Goal["hour"] == now.getHours() && time_Goal["minute"] < now.getMinutes()) || database['temperature'] == data.temperature)
                       {
                         temp_update = false;
-                        console.log("Invalid Time");
+                        console.log("Invalid Time or Temperature");
                       }else
                       {
                         if (((time_Goal["hour"] == now.getHours() + 1) && (time_Goal["minute"] == now.getMinutes() - 54)) || (time_Goal["hour"] == now.getHours() && (time_Goal["minute"] == now.getMinutes() + 5)))
                         {
+                          while (database['temperature'] != data.temperature)
+                          {
+                          if (database['temperature'] > data.temperature)
+                          {
+                            //Activate Heater 
+                          }else{
+                            //Activate Cooler
+                          }
                           temp_update = false;
-                          console.log("Invalid Time");
                         }
                       }
                     }
-                  });
+                  }
+                });
+
                   
                   // clear LED before every update_light
                   //sense.clear();
