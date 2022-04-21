@@ -30,7 +30,7 @@ function dispAccel() {
 
   var str2 = "";
   if (data.temperature) {
-    var str2 = util.format(' %s %s', data.temperature.toFixed(4));  
+    str2 = util.format(' %s %s', data.temperature.toFixed(4));  
   }
 
   writeNewPost(data);
@@ -64,14 +64,32 @@ const starCountRef = ref(database, 'update_temp');
         // read in the rest of light data and process
             get(child(ref(database), `temperature`)).then((snapshot) => {
                 if (snapshot.exists()) {
+                  firebase.database().ref('time_Goal').once('value',(snap)=>{
+                    const time_Goal = snapshot.val();
+                    console.log("Desired Hour: " + time_Goal["hour"] + "\nDesired Minute: " + time_Goal["minute"]);
+                    {
+                      if ((time_Goal["hour"] < now.getHours()) || (time_Goal["hour"] == now.getHours() && time_Goal["minute"] < now.getMinutes()))
+                      {
+                        temp_update = false;
+                        console.log("Invalid Time");
+                      }else
+                      {
+                        if (((time_Goal["hour"] == now.getHours() + 1) && (time_Goal["minute"] == now.getMinutes() - 54)) || (time_Goal["hour"] == now.getHours() && (time_Goal["minute"] == now.getMinutes() + 5)))
+                        {
+                          temp_update = false;
+                          console.log("Invalid Time");
+                        }
+                      }
+                    }
+                  });
                   
                   // clear LED before every update_light
-                  sense.clear();
+                  //sense.clear();
 
-                  const RGB = snapshot.val();
+                  //const RGB = snapshot.val();
                   "use strict";
-                  sense.setPixel(RGB["col"], RGB["row"], [RGB["r"], RGB["g"], RGB["b"]]);
-                  console.log("Pixel on Column " + RGB["col"] + " Row " + RGB["row"] + " changed to color [" + [RGB["r"], RGB["g"], RGB["b"]] + "]" + "\n\n");
+                  //sense.setPixel(RGB["col"], RGB["row"], [RGB["r"], RGB["g"], RGB["b"]]);
+                  //console.log("Pixel on Column " + RGB["col"] + " Row " + RGB["row"] + " changed to color [" + [RGB["r"], RGB["g"], RGB["b"]] + "]" + "\n\n");
                 } else {
                 console.log("No data available");
                 }
