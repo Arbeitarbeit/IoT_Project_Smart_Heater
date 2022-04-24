@@ -50,10 +50,7 @@ function writeNewPost(data) {
   const now = new Date();
 
   update(ref(database), {
-      "temperature": data.temperature,
-      "hour": now.getHours(),
-      "minute": now.getMinutes() 
-
+      "temperature": data.temperature
   });
 
   console.log("Current Temperature: " + data.temperature + "\nHour: " + now.getHours() + ", Minute:" + now.getMinutes());
@@ -68,47 +65,44 @@ const starCountRef = ref(database, 'update_temp');
 
         // if update_light is True
         if (temp_update){
-
-         
-
-        // read in the rest of light data and process
-            get(child(ref(database), `temperature`)).then((snapshot) => {
-                if (snapshot.exists()) 
+          get(child(ref(database), `temperature`)).then((snapshot) => {
+            if (snapshot.exists()) 
+            {
+              firebase.database().ref('time_Goal').once('value',(snap)=>
+            {
+              const time_Goal = snapshot.val();
+              "use strict";
+              console.log("Desired Hour: " + time_Goal["hour"] + "\nDesired Minute: " + time_Goal["minute"]);
+              if ((time_Goal["hour"] < now.getHours()) || (time_Goal["hour"] == now.getHours() && time_Goal["minute"] < now.getMinutes()) || database['temperature'] == data.temperature)
+              {
+                temp_update = false;
+                console.log("Invalid Time or Temperature");
+              }else
+              {
+                if (((time_Goal["hour"] == now.getHours() + 1) && (time_Goal["minute"] == now.getMinutes() - 54)) || (time_Goal["hour"] == now.getHours() && (time_Goal["minute"] == now.getMinutes() + 5)))
                 {
-                  firebase.database().ref('time_Goal').once('value',(snap)=>
+                  if (database['temperature'] > data.temperature)
                   {
-                    const time_Goal = snapshot.val();
-                    "use strict";
-                    console.log("Desired Hour: " + time_Goal["hour"] + "\nDesired Minute: " + time_Goal["minute"]);
-                    if ((time_Goal["hour"] < now.getHours()) || (time_Goal["hour"] == now.getHours() && time_Goal["minute"] < now.getMinutes()) || database['temperature'] == data.temperature)
-                    {
-                      temp_update = false;
-                      console.log("Invalid Time or Temperature");
-                    }else
-                    {
-                      if (((time_Goal["hour"] == now.getHours() + 1) && (time_Goal["minute"] == now.getMinutes() - 54)) || (time_Goal["hour"] == now.getHours() && (time_Goal["minute"] == now.getMinutes() + 5)))
-                      {
-                        if (database['temperature'] > data.temperature)
-                        {
-                          //Activate Heater 
-                        }else{
-                          //Activate Cooler
-                        }
-                        temp_update = false;
-                      }
-                    }
-                  });
-                }else{
-                console.log("No data available");
+                    //Activate Heater 
+                  }else
+                  {
+                    //Activate Cooler
+                  }
+                  temp_update = false;
                 }
-                update(ref(database), {
-                  "update_light": false,
-                });
-            }).catch((error) => {
-                console.error(error);
+              }
             });
-          };
-
+          }else
+          {
+            console.log("No data available");
+          }
+          update(ref(database), {
+            "update_temp": false,
+          });
+        }).catch((error) => {
+          console.error(error);
+        });
+      };
     });
 
 
