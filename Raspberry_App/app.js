@@ -1,6 +1,14 @@
 // Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
+// import { initializeApp } from "firebase/app";
+// import { getAnalytics } from "firebase/analytics";
+
+
+var firebase = require( 'firebase/app' );
+var nodeimu = require( '@trbll/nodeimu' );
+var IMU = new nodeimu.IMU( );
+var sense = require( '@trbll/sense-hat-led' );
+var util = require('util');
+const { getDatabase, ref, onValue, set, update, push, child, get } = require('firebase/database');
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -24,9 +32,9 @@ const analytics = getAnalytics(app);
 const database = getDatabase(app);
 
 function dispAccel() {
-  var tic = new Date();
+  //var tic = new Date();
   var data = IMU.getValueSync();
-  var toc = new Date();
+  //var toc = new Date();
 
   var str2 = "";
   if (data.temperature) {
@@ -65,43 +73,32 @@ const starCountRef = ref(database, 'update_temp');
 
         // read in the rest of light data and process
             get(child(ref(database), `temperature`)).then((snapshot) => {
-                if (snapshot.exists()) {
-                  firebase.database().ref('time_Goal').once('value',(snap)=>{
+                if (snapshot.exists()) 
+                {
+                  firebase.database().ref('time_Goal').once('value',(snap)=>
+                  {
                     const time_Goal = snapshot.val();
+                    "use strict";
                     console.log("Desired Hour: " + time_Goal["hour"] + "\nDesired Minute: " + time_Goal["minute"]);
+                    if ((time_Goal["hour"] < now.getHours()) || (time_Goal["hour"] == now.getHours() && time_Goal["minute"] < now.getMinutes()) || database['temperature'] == data.temperature)
                     {
-                      if ((time_Goal["hour"] < now.getHours()) || (time_Goal["hour"] == now.getHours() && time_Goal["minute"] < now.getMinutes()) || database['temperature'] == data.temperature)
+                      temp_update = false;
+                      console.log("Invalid Time or Temperature");
+                    }else
+                    {
+                      if (((time_Goal["hour"] == now.getHours() + 1) && (time_Goal["minute"] == now.getMinutes() - 54)) || (time_Goal["hour"] == now.getHours() && (time_Goal["minute"] == now.getMinutes() + 5)))
                       {
-                        temp_update = false;
-                        console.log("Invalid Time or Temperature");
-                      }else
-                      {
-                        if (((time_Goal["hour"] == now.getHours() + 1) && (time_Goal["minute"] == now.getMinutes() - 54)) || (time_Goal["hour"] == now.getHours() && (time_Goal["minute"] == now.getMinutes() + 5)))
+                        if (database['temperature'] > data.temperature)
                         {
-                          while (database['temperature'] != data.temperature)
-                          {
-                          if (database['temperature'] > data.temperature)
-                          {
-                            //Activate Heater 
-                          }else{
-                            //Activate Cooler
-                          }
-                          temp_update = false;
+                          //Activate Heater 
+                        }else{
+                          //Activate Cooler
                         }
+                        temp_update = false;
                       }
                     }
-                  }
-                });
-
-                  
-                  // clear LED before every update_light
-                  //sense.clear();
-
-                  //const RGB = snapshot.val();
-                  "use strict";
-                  //sense.setPixel(RGB["col"], RGB["row"], [RGB["r"], RGB["g"], RGB["b"]]);
-                  //console.log("Pixel on Column " + RGB["col"] + " Row " + RGB["row"] + " changed to color [" + [RGB["r"], RGB["g"], RGB["b"]] + "]" + "\n\n");
-                } else {
+                  });
+                }else{
                 console.log("No data available");
                 }
                 update(ref(database), {
