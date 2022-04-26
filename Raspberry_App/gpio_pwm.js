@@ -1,4 +1,4 @@
-
+//export {setupGPIO, openFan0, openFan1, openHeater0, openHeater1, updateFan0, updateFan1, updateHeater0, updateHeater1};
 const Gpio = require('pigpio').Gpio;
 
 // const fan = new Gpio(17, {mode: Gpio.OUTPUT});
@@ -40,11 +40,11 @@ function openHeater1(){
 
 // open decision strategy
 
-tempdiff = database['temperature'] - data.temperature
-if(tempdiff < -1)
-if(tempdiff < -1)
-if(tempdiff > 1)
-if(tempdiff > 1)
+//tempdiff = database['temperature'] - data.temperature
+// if(tempdiff < -1)
+// if(tempdiff < -1)
+// if(tempdiff > 1)
+// if(tempdiff > 1)
 
 
 // dutyCycle update depending the temperature difference
@@ -69,12 +69,13 @@ function updateHeater1(){
 }
 
 // update decision strategy
-if(tempdiff > -1||tempdiff < 0)
-if(tempdiff > -1||tempdiff < 0)
-if(tempdiff < 1||tempdiff > 0)
-if(tempdiff < 1||tempdiff > 0)
+// if(tempdiff > -1||tempdiff < 0)
+// if(tempdiff > -1||tempdiff < 0)
+// if(tempdiff < 1||tempdiff > 0)
+// if(tempdiff < 1||tempdiff > 0)
 
 
+// export funtion to app.js
 
 
 
