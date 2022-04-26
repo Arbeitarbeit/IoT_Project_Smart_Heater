@@ -1,6 +1,7 @@
 // Import the functions you need from the SDKs you need
 // import { initializeApp } from "firebase/app";
 // import { getAnalytics } from "firebase/analytics";
+const {setupGPIO, openFan0, openFan1, openHeater0, openHeater1, updateFan0, updateFan1, updateHeater0, updateHeater1} = require('./gpio_pwm_test.js');
 
 
 var firebase = require( 'firebase/app' );
@@ -27,14 +28,14 @@ const firebaseConfig = {
 };
 
 // Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+const app =  firebase.initializeApp(firebaseConfig);
+//const analytics = getAnalytics(app);
 const database = getDatabase(app);
 
 function dispAccel() {
-  //var tic = new Date();
+  var tic = new Date();
   var data = IMU.getValueSync();
-  //var toc = new Date();
+  var toc = new Date();
 
   var str2 = "";
   if (data.temperature) {
@@ -42,6 +43,11 @@ function dispAccel() {
   }
 
   writeNewPost(data);
+  run_heater_fan();
+
+
+  setTimeout(dispAccel, 5000 - (toc - tic));
+
 
 }
 
@@ -58,8 +64,8 @@ function writeNewPost(data) {
 
 
 
-
-const starCountRef = ref(database, 'update_temp');
+function run_heater_fan(){
+  const starCountRef = ref(database, 'update_temp');
     onValue(starCountRef, (snapshot) => {
         const temp_update = snapshot.val();
 
@@ -68,31 +74,32 @@ const starCountRef = ref(database, 'update_temp');
           get(child(ref(database), `temperature`)).then((snapshot) => {
             if (snapshot.exists()) 
             {
-              firebase.database().ref('time_Goal').once('value',(snap)=>
-            {
-              const time_Goal = snapshot.val();
-              "use strict";
-              console.log("Desired Hour: " + time_Goal["hour"] + "\nDesired Minute: " + time_Goal["minute"]);
-              if ((time_Goal["hour"] < now.getHours()) || (time_Goal["hour"] == now.getHours() && time_Goal["minute"] < now.getMinutes()) || database['temperature'] == data.temperature)
+              const time_ref = firebase.database().ref('time_Goal');
+              time_ref.on('value',(snap)=>
               {
-                temp_update = false;
-                console.log("Invalid Time or Temperature");
-              }else
-              {
-                if (((time_Goal["hour"] == now.getHours() + 1) && (time_Goal["minute"] == now.getMinutes() - 54)) || (time_Goal["hour"] == now.getHours() && (time_Goal["minute"] == now.getMinutes() + 5)))
+                const time_Goal = snapshot.val();
+                "use strict";
+                console.log("Desired Hour: " + time_Goal["hour"] + "\nDesired Minute: " + time_Goal["minute"]);
+                if ((time_Goal["hour"] < now.getHours()) || (time_Goal["hour"] == now.getHours() && time_Goal["minute"] < now.getMinutes()) || database['temperature'] == data.temperature)
                 {
-                  if (database['temperature'] > data.temperature)
-                  {
-                    //Activate Heater 
-                  }else
-                  {
-                    //Activate Cooler
-                  }
                   temp_update = false;
+                  console.log("Invalid Time or Temperature");
+                } else
+                {
+                  if (((time_Goal["hour"] == now.getHours() + 1) && (time_Goal["minute"] == now.getMinutes() - 54)) || (time_Goal["hour"] == now.getHours() && (time_Goal["minute"] == now.getMinutes() + 5)))
+                  {
+                    if (database['temperature'] > data.temperature)
+                    {
+                      //Activate Heater 
+                    }else
+                    {
+                      openFan0();
+                    }
+                    temp_update = false;
+                  }
                 }
-              }
-            });
-          }else
+              });
+          } else
           {
             console.log("No data available");
           }
@@ -104,6 +111,8 @@ const starCountRef = ref(database, 'update_temp');
         });
       };
     });
+}
+
 
 
 
