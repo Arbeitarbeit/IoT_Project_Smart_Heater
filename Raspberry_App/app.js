@@ -68,6 +68,19 @@ function run_heater_fan(){
   var temperature_read;
   var time_read;
 
+  const starCountRef0 = ref(database, 'stop');
+    onValue(starCountRef0, (snapshot) => {
+        const temp_stop = snapshot.val();
+        if (temp_stop)
+        {
+          console.log("turn off");
+          update(ref(database), {
+            "stop": false
+          });
+        }
+
+      });
+
   const starCountRef = ref(database, 'update_temp');
     onValue(starCountRef, (snapshot) => {
         const temp_update = snapshot.val();
