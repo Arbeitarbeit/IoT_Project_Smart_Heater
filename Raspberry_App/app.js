@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 // import { initializeApp } from "firebase/app";
 // import { getAnalytics } from "firebase/analytics";
-const {setupGPIO, openFan0, openFan1, openHeater0, openHeater1, updateFan0, updateFan1, updateHeater0, updateHeater1} = require('./gpio_pwm_test.js');
+const {setupGPIO, openFan0, openFan1, openHeater0, openHeater1, updateFan0, updateFan1, updateHeater0, updateHeater1} = require('./gpio_pwm_total.js');
 
 
 var firebase = require( 'firebase/app' );
@@ -81,11 +81,14 @@ function run_heater_fan(){
 
       });
 
+
+
+
   const starCountRef = ref(database, 'update_temp');
     onValue(starCountRef, (snapshot) => {
         const temp_update = snapshot.val();
         
-        // if update_light is True
+        // if temp_updatet is True
         if (!temp_update){
 
           get(child(ref(database), `temperature`)).then((snapshot) => {
@@ -133,7 +136,7 @@ function run_heater_fan(){
           update(ref(database), {
             "update_temp": false
           });
-
+          
           setTimeout(()=>{ make_action(temperature_read, time_read); }, 80);
             
 
@@ -151,10 +154,22 @@ function make_action(temperature_read, time_read){
     {
       if (temperature_read > data.temperature)
       {
-        console.log("heater");
+        console.log("heater")
+        if (temperature_read == data.temperature)
+        {
+          update(ref(database), {
+            "update_notif": true
+          });
+        }
       }else
       {
         console.log("cooler");
+        if (temperature_read == data.temperature)
+        {
+          update(ref(database), {
+            "update_notif": true
+          });
+        }
         // openFan0();
       }
       temp_update = false;
