@@ -10,7 +10,7 @@ var IMU = new nodeimu.IMU( );
 var sense = require( '@trbll/sense-hat-led' );
 var util = require('util');
 const { getDatabase, ref, onValue, set, update, push, child, get } = require('firebase/database');
-var temp_read = 0;
+//var temp_read = 0;
 
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
@@ -73,12 +73,12 @@ function run_heater_fan(){
   var time_read;
   var data = IMU.getValueSync();
 
-  if (temp_read == data.temperature)
-  {
-    update(ref(database), {
-      "update_notif": true
-    });
-  }
+  // if (temp_read == data.temperature)
+  // {
+  //   update(ref(database), {
+  //     "update_notif": true
+  //   });
+  // }
 
   const starCountRef0 = ref(database, 'stop');
     onValue(starCountRef0, (snapshot) => {
@@ -107,7 +107,7 @@ function run_heater_fan(){
             {
               const temparature = snapshot.val();
               temperature_read = temparature;
-              temp_read = temperature_read;
+              // temp_read = temperature_read;
               // var db = app.database();
               // var time_ref = db.ref("time_Goal");
               // //var time_ref = firebase.database().ref("time_Goal");
