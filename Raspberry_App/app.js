@@ -42,12 +42,15 @@ function dispAccel() {
   if (data.temperature) {
     str2 = util.format(' %s %s', data.temperature.toFixed(4));  
   }
+  update(ref(database), {
+    "actual_temp": data.temperature
+  });
 
   writeNewPost(data);
   run_heater_fan();
 
 
-  setTimeout(dispAccel, 2000 - (toc - tic));
+  setTimeout(dispAccel, 1000 - (toc - tic));
 
 
 }
@@ -69,7 +72,7 @@ function run_heater_fan(){
   var temperature_read;
   var time_read;
   var data = IMU.getValueSync();
-  
+
   if (temp_read == data.temperature)
   {
     update(ref(database), {
@@ -97,9 +100,8 @@ function run_heater_fan(){
     onValue(starCountRef, (snapshot) => {
         const temp_update = snapshot.val();
         
-        // if temp_update is True
-        if (!temp_update){
-
+        // if temp_updatet is True
+        if (temp_update){
           get(child(ref(database), `temperature`)).then((snapshot) => {
             if (snapshot.exists()) 
             {
@@ -160,15 +162,26 @@ function make_action(temperature_read, time_read){
   console.log(data.temperature);
   if ((time_read["hour"] > now.getHours()) && (time_read["hour"] == now.getHours() && time_read["minute"] > now.getMinutes()) || temperature_read != data.temperature)
   {
-    if (((time_read["hour"] == now.getHours() + 1) && (time_read["minute"] == now.getMinutes() - 54)) || (time_read["hour"] == now.getHours() && (time_read["minute"] == now.getMinutes() + 5)))
+    if (((time_read["hour"] == now.getHours() + 1) && (time_read["minute"] == now.getMinutes() - 54)) || (time_read["hour"] == now.getHours() && (now.getMinutes() - time_read["minute"] <= 5)))
     {
       if (temperature_read > data.temperature)
       {
         console.log("heater")
-       
+        if (temperature_read <= data.temperature)
+        {
+          update(ref(database), {
+            "update_notif": true
+          });
+        }
       }else
       {
         console.log("cooler");
+        if (temperature_read >= data.temperature)
+        {
+          update(ref(database), {
+            "update_notif": true
+          });
+        }
         // openFan0();
       }
       temp_update = false;
