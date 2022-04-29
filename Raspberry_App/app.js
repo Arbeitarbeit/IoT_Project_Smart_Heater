@@ -158,9 +158,9 @@ function run_heater_fan(data){
 function make_action(temperature_read, time_read, data){
   var time_Needed = (data.temperature - temperature_read) + 3;
   const now = new Date();
-  if ((time_read["hour"] > now.getHours() && time_read["minute"] < now.getMinutes()) || (time_read["hour"] == now.getHours() && time_read["minute"] > now.getMinutes()) || temperature_read != data.temperature)
+  if (((time_read["hour"] > now.getHours() && time_read["minute"] < now.getMinutes()) || (time_read["hour"] == now.getHours() && time_read["minute"] > now.getMinutes())) && temperature_read != data.temperature)
   {
-    if (((time_read["hour"] == now.getHours() + 1) && (now.getMinutes() - time_read["minute"] >= (59 - time_Needed))) || (time_read["hour"] == now.getHours() && (now.getMinutes() - time_read["minute"] <= time_Needed)))
+    if (((time_read["hour"] == now.getHours() + 1) && (now.getMinutes() - time_read["minute"] >= (59 - time_Needed))) || (time_read["hour"] == now.getHours() && (time_read["minute"] - now.getMinutes() <= time_Needed)))
     {
       if (temperature_read > data.temperature)
       {
