@@ -1,4 +1,4 @@
-const {setupGPIO, openFan0, openHeater0, closeFan0, closeHeater0} = require('./pwm_export_test.js');
+const {setupGPIO, openFan0, openHeater0, closeFan0, closeHeater0} = require('./gpio_pwm.js');
 //setupGPIO;
 var firebase = require( 'firebase/app' );
 var nodeimu = require( '@trbll/nodeimu' );
