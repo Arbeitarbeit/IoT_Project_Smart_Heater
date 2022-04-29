@@ -1,4 +1,4 @@
-const {setupGPIO, openFan0, openHeater0, closeFan0, closeHeater0} = require('./gpio_pwm.js');
+const {setupGPIO, openFan0, openHeater0, closeFan0, closeHeater0} = require('./pwm_export_test.js');
 //setupGPIO;
 var firebase = require( 'firebase/app' );
 var nodeimu = require( '@trbll/nodeimu' );
@@ -12,6 +12,7 @@ var desired_Tempread;
 var actual_Tempread;
 var heat_or_cool = -1;
 var print_counter = 0;
+
 
 // Firebase configuration
 const firebaseConfig = {
@@ -43,6 +44,7 @@ function dispAccel() {
   actual_Tempread = data.temperature;
 
 
+
   // check temperature diff and make action
   if (heat_or_cool == 1)
   { //open fan
@@ -69,15 +71,18 @@ function dispAccel() {
       heat_or_cool = -2;
     }
   } else if (heat_or_cool == -2){   // keep temp at desired temp
-    var cancelled = false;
+    // var cancelled = false;
     if (desired_Tempread <= actual_Tempread){
-      openFan0(port);
-      // heater off
-      closeHeater0(port);
+        openFan0(port);
+        // heater off
+        closeHeater0(port);
+
+      
     } else if (desired_Tempread > actual_Tempread){
       // heater on, fan off
-      openHeater0(port);
-      closeFan0(port);
+        openHeater0(port);
+        closeFan0(port);
+
     }
   }
 
@@ -185,6 +190,9 @@ function make_action(temperature_read, time_read, data){
   }
   else
   {
+    update(ref(database), {
+      "update_temp": false
+    });
     temp_update = false;
     console.log("Invalid Time or Temperature");
   }
