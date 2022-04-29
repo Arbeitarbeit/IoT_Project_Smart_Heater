@@ -1,22 +1,19 @@
-// Import the functions you need from the SDKs you need
-// import { initializeApp } from "firebase/app";
-// import { getAnalytics } from "firebase/analytics";
-const {setupGPIO, openFan0, openFan1, openHeater0, openHeater1, updateFan0, updateFan1, updateHeater0, updateHeater1} = require('./gpio_pwm_total.js');
-
-
+const {setupGPIO, openFan0, openHeater0, closeFan0, closeHeater0} = require('./pwm_export_test.js');
+//setupGPIO;
 var firebase = require( 'firebase/app' );
 var nodeimu = require( '@trbll/nodeimu' );
 var IMU = new nodeimu.IMU( );
 var sense = require( '@trbll/sense-hat-led' );
 var util = require('util');
 const { getDatabase, ref, onValue, set, update, push, child, get } = require('firebase/database');
-//var temp_read = 0;
 
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+var desired_Tempread;
+var actual_Tempread;
+var heat_or_cool = -1;
+var print_counter = 0;
+
+// Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyDUOj-jWraOJ7Y9zpem7vrkDWMrTuK_5C8",
   authDomain: "iotsmartheater.firebaseapp.com",
@@ -30,55 +27,86 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app =  firebase.initializeApp(firebaseConfig);
-//const analytics = getAnalytics(app);
 const database = getDatabase(app);
+
+//setup GPIO at the beginning
+const port = setupGPIO();
 
 function dispAccel() {
   var tic = new Date();
   var data = IMU.getValueSync();
   var toc = new Date();
 
-  var str2 = "";
-  if (data.temperature) {
-    str2 = util.format(' %s %s', data.temperature.toFixed(4));  
-  }
   update(ref(database), {
     "actual_temp": data.temperature
   });
-
-  writeNewPost(data);
-  run_heater_fan();
+  actual_Tempread = data.temperature;
 
 
-  setTimeout(dispAccel, 1000 - (toc - tic));
+  // check temperature diff and make action
+  if (heat_or_cool == 1)
+  { //open fan
+    console.log("cooler");
+    openFan0(port);
+    if (desired_Tempread > actual_Tempread)
+    {
+      console.log("cooled");
+      update(ref(database), {
+        "update_notif": true
+      });
+      heat_or_cool = -2;
+    }
+  } else if (heat_or_cool == 0)
+  { //open heater
+    console.log("heater")
+    openHeater0(port);
+
+    if (desired_Tempread <= actual_Tempread){
+      console.log("heated");
+      update(ref(database), {
+        "update_notif": true
+      });
+      heat_or_cool = -2;
+    }
+  } else if (heat_or_cool == -2){   // keep temp at desired temp
+    var cancelled = false;
+    if (desired_Tempread <= actual_Tempread){
+      openFan0(port);
+      // heater off
+      closeHeater0(port);
+    } else if (desired_Tempread > actual_Tempread){
+      // heater on, fan off
+      openHeater0(port);
+      closeFan0(port);
+    }
+  }
+
+  print_counter++;
+  if (print_counter == 5){
+    writeNewPost(data);
+    print_counter = 0;
+  }
+  
+  run_heater_fan(data);
+
+
+  setTimeout(dispAccel, 200 - (toc - tic));
 
 
 }
+
 
 function writeNewPost(data) {
   const database = getDatabase(app);
   const now = new Date();
-
-  // update(ref(database), {
-  //     "temperature": data.temperature
-  // });
-
-  console.log("Current Temperature: " + data.temperature + "\nHour: " + now.getHours() + ", Minute:" + now.getMinutes());
+  console.log("Current Temperature: " + data.temperature);
 }
 
 
 
-function run_heater_fan(){
+function run_heater_fan(data){
   var temperature_read;
   var time_read;
-  var data = IMU.getValueSync();
-
-  // if (temp_read == data.temperature)
-  // {
-  //   update(ref(database), {
-  //     "update_notif": true
-  //   });
-  // }
 
   const starCountRef0 = ref(database, 'stop');
     onValue(starCountRef0, (snapshot) => {
@@ -89,8 +117,10 @@ function run_heater_fan(){
           update(ref(database), {
             "stop": false
           });
+          heat_or_cool = -1;  // standby 
+          closeFan0(port);
+          closeHeater0(port);
         }
-
       });
 
 
@@ -100,41 +130,14 @@ function run_heater_fan(){
     onValue(starCountRef, (snapshot) => {
         const temp_update = snapshot.val();
         
-        // if temp_updatet is True
+        // if temp_update is True
         if (temp_update){
           get(child(ref(database), `temperature`)).then((snapshot) => {
             if (snapshot.exists()) 
             {
               const temparature = snapshot.val();
               temperature_read = temparature;
-              // temp_read = temperature_read;
-              // var db = app.database();
-              // var time_ref = db.ref("time_Goal");
-              // //var time_ref = firebase.database().ref("time_Goal");
-              // time_ref.once('value',(snap)=>
-              // {
-              //   const time_Goal = snapshot.val();
-              //   "use strict";
-              //   console.log("Desired Hour: " + time_Goal["hour"] + "\nDesired Minute: " + time_Goal["minute"]);
-              //   if ((time_Goal["hour"] < now.getHours()) || (time_Goal["hour"] == now.getHours() && time_Goal["minute"] < now.getMinutes()) || database['temperature'] == data.temperature)
-              //   {
-              //     temp_update = false;
-              //     console.log("Invalid Time or Temperature");
-              //   } else
-              //   {
-              //     if (((time_Goal["hour"] == now.getHours() + 1) && (time_Goal["minute"] == now.getMinutes() - 54)) || (time_Goal["hour"] == now.getHours() && (time_Goal["minute"] == now.getMinutes() + 5)))
-              //     {
-              //       if (database['temperature'] > data.temperature)
-              //       {
-              //         //Activate Heater 
-              //       }else
-              //       {
-              //         openFan0();
-              //       }
-              //       temp_update = false;
-              //     }
-              //   }
-              // });
+              desired_Tempread = temperature_read;
             }      
           });
 
@@ -144,47 +147,40 @@ function run_heater_fan(){
               time_read = time_Goal;
             }
           });
-
-          update(ref(database), {
-            "update_temp": false
-          });
           
-          setTimeout(()=>{ make_action(temperature_read, time_read); }, 80);
+          setTimeout(()=>{ make_action(temperature_read, time_read, data); }, 2000);
             
 
         }
     });
 }
 
-function make_action(temperature_read, time_read){
+function make_action(temperature_read, time_read, data){
+  var time_Needed = (data.temperature - temperature_read) + 3;
   const now = new Date();
-  var data = IMU.getValueSync();
-  console.log(data.temperature);
-  if ((time_read["hour"] > now.getHours()) && (time_read["hour"] == now.getHours() && time_read["minute"] > now.getMinutes()) || temperature_read != data.temperature)
+  if ((time_read["hour"] > now.getHours() && time_read["minute"] < now.getMinutes()) || (time_read["hour"] == now.getHours() && time_read["minute"] > now.getMinutes()) || temperature_read != data.temperature)
   {
-    if (((time_read["hour"] == now.getHours() + 1) && (time_read["minute"] == now.getMinutes() - 54)) || (time_read["hour"] == now.getHours() && (now.getMinutes() - time_read["minute"] <= 5)))
+    if (((time_read["hour"] == now.getHours() + 1) && (now.getMinutes() - time_read["minute"] >= (59 - time_Needed))) || (time_read["hour"] == now.getHours() && (now.getMinutes() - time_read["minute"] <= time_Needed)))
     {
       if (temperature_read > data.temperature)
       {
-        console.log("heater")
-        if (temperature_read <= data.temperature)
-        {
-          update(ref(database), {
-            "update_notif": true
-          });
-        }
+        console.log("heater");
+        openHeater0(port);
+        heat_or_cool = 0;
+        update(ref(database), {
+          "update_temp": false
+        });
       }else
       {
+        heat_or_cool = 1;
+        openFan0(port);
+        update(ref(database), {
+          "update_temp": false
+        });
         console.log("cooler");
-        if (temperature_read >= data.temperature)
-        {
-          update(ref(database), {
-            "update_notif": true
-          });
-        }
-        // openFan0();
+        
       }
-      temp_update = false;
+
     }
   }
   else
@@ -195,9 +191,5 @@ function make_action(temperature_read, time_read){
     
 }
 
-
-
-
-//TODO: Implement function to detect when the temp/time values change and read them. Control heater based on temp/time vlaues
 
 dispAccel();
