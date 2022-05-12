@@ -148,7 +148,7 @@ function run_heater_fan(data){
             }
           });
           
-          setTimeout(()=>{ make_action(temperature_read, time_read, data); }, 2000);
+          setTimeout(()=>{ make_action(temperature_read, time_read, data); }, 5000);
             
 
         }
@@ -156,9 +156,9 @@ function run_heater_fan(data){
 }
 
 function make_action(temperature_read, time_read, data){
-  var time_Needed = (data.temperature - temperature_read) + 3;
+  var time_Needed = Math.abs((temperature_read - data.temperature)*0.95) + 3; // velocity of heating and cooling is about 0.95degree/min, and add 3 minutes buffer
   const now = new Date();
-  if (((time_read["hour"] > now.getHours() && time_read["minute"] < now.getMinutes()) || (time_read["hour"] == now.getHours() && time_read["minute"] > now.getMinutes())) && temperature_read != data.temperature)
+  if (((time_read["hour"] > now.getHours()) || (time_read["hour"] == now.getHours() && time_read["minute"] >= now.getMinutes())))
   {
     if (((time_read["hour"] == now.getHours() + 1) && (now.getMinutes() - time_read["minute"] >= (59 - time_Needed))) || (time_read["hour"] == now.getHours() && (time_read["minute"] - now.getMinutes() <= time_Needed)))
     {
@@ -182,10 +182,16 @@ function make_action(temperature_read, time_read, data){
       }
 
     }
+    // else{
+
+    // }
   }
   else
   {
     temp_update = false;
+    update(ref(database), {
+        "update_temp": false
+    });
     console.log("Invalid Time or Temperature");
   }
     
